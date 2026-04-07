@@ -61,7 +61,6 @@ function loadfile(path) {
             continue;
         }
         if (line.indexOf("/muse/elements/blink") !== -1) {
-            post("Skipping line with non-numeric data: " + line + "\n");
             continue;
         }
         var cols = line.split(",");
