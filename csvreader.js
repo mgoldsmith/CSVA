@@ -13,12 +13,18 @@ var selected_indices = [];
 var NUM_COLS = 5; // change to match your CSV
 outlets = NUM_COLS;
 
+var range_initialized = false;
+var min_val = 0.0;
+var max_val = 0.0;
+
 function bang() {
-    if (rows.length === 0) return;
+    if (rows.length === 0 || range_initialized == false) return;
     
     var row = rows[cursor % rows.length]; // loop
     for (var i = 0; i < NUM_COLS; i++) {
-        outlet(i, (row[i]) || 0);
+        var normalized_wave_val = (row[i] - min_val) / (max_val - min_val);
+        // post("normalized_wave_val: " + normalized_wave_val + "\n");
+        outlet(i, normalized_wave_val);
     }
     cursor++;
 }
@@ -35,12 +41,26 @@ function parseheader(header) {
             selected_indices.push(idx);
         }
     }
+    post("selected_indices: " + selected_indices + "\n");
     return true;
+}
+
+function updaterange(floatval) {
+    if (!range_initialized) {
+        min_val = floatval;
+        max_val = floatval;
+        range_initialized = true;
+        return;
+    }
+
+    min_val = Math.min(min_val, floatval);
+    max_val = Math.max(max_val, floatval);
 }
 
 function loadfile(path) {
     rows = [];
     cursor = 0;
+    range_initialized = false;
     selected_indices = [];
     var f = new File(path, "read");
     if (!f.isopen) {
@@ -66,7 +86,12 @@ function loadfile(path) {
         var cols = line.split(",");
         for (var c = 0; c < cols.length; c++) { cols[c] = parseFloat(cols[c]); }
         var selected_cols = [];
-        for (var s = 0; s < selected_indices.length; s++) { selected_cols.push(cols[selected_indices[s]]); }
+        for (var s = 0; s < selected_indices.length; s++) {
+            var floatval = cols[selected_indices[s]];
+            post("floatval: " + floatval + "\n");
+            updaterange(floatval);
+            selected_cols.push(floatval);
+        }
         rows.push(selected_cols);
     }
     f.close();
