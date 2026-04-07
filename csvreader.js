@@ -23,7 +23,6 @@ function bang() {
     var row = rows[cursor % rows.length]; // loop
     for (var i = 0; i < NUM_COLS; i++) {
         var normalized_wave_val = (row[i] - min_val) / (max_val - min_val);
-        // post("normalized_wave_val: " + normalized_wave_val + "\n");
         outlet(i, normalized_wave_val);
     }
     cursor++;
@@ -41,7 +40,6 @@ function parseheader(header) {
             selected_indices.push(idx);
         }
     }
-    post("selected_indices: " + selected_indices + "\n");
     return true;
 }
 
@@ -73,7 +71,7 @@ function loadfile(path) {
         return;
     }
     while (f.eof != 0) {
-        var line = f.readline();
+        var line = f.readline(10000);
         if (line === null) break; // EOF
         line = line.trim();
         if (line.length === 0) {
@@ -88,7 +86,6 @@ function loadfile(path) {
         var selected_cols = [];
         for (var s = 0; s < selected_indices.length; s++) {
             var floatval = cols[selected_indices[s]];
-            post("floatval: " + floatval + "\n");
             updaterange(floatval);
             selected_cols.push(floatval);
         }
