@@ -10,7 +10,7 @@ const SELECTED_ROWS = [
     "Gamma_TP9"
 ];
 var selected_indices = [];
-var NUM_COLS = 5; // change to match your CSV
+var NUM_COLS = 5;
 outlets = NUM_COLS;
 
 var range_initialized = false;
@@ -55,6 +55,26 @@ function updaterange(floatval) {
     max_val = Math.max(max_val, floatval);
 }
 
+function readrow(line) {
+    line = line.trim();
+    if (line.length === 0) {
+        post("Skipping empty line\n");
+        return null;
+    }
+    if (line.indexOf("/muse/elements/blink") !== -1) {
+        return null;
+    }
+    var cols = line.split(",");
+    for (var c = 0; c < cols.length; c++) { cols[c] = parseFloat(cols[c]); }
+    var selected_cols = [];
+    for (var s = 0; s < selected_indices.length; s++) {
+        var floatval = cols[selected_indices[s]];
+        updaterange(floatval);
+        selected_cols.push(floatval);
+    }
+    return selected_cols;
+}
+
 function loadfile(path) {
     rows = [];
     cursor = 0;
@@ -73,22 +93,8 @@ function loadfile(path) {
     while (f.eof != 0) {
         var line = f.readline(10000);
         if (line === null) break; // EOF
-        line = line.trim();
-        if (line.length === 0) {
-            post("Skipping empty line\n");
-            continue;
-        }
-        if (line.indexOf("/muse/elements/blink") !== -1) {
-            continue;
-        }
-        var cols = line.split(",");
-        for (var c = 0; c < cols.length; c++) { cols[c] = parseFloat(cols[c]); }
-        var selected_cols = [];
-        for (var s = 0; s < selected_indices.length; s++) {
-            var floatval = cols[selected_indices[s]];
-            updaterange(floatval);
-            selected_cols.push(floatval);
-        }
+        selected_cols = readrow(line);
+        if (selected_cols === null) continue; // empty or invalid row
         rows.push(selected_cols);
     }
     f.close();
