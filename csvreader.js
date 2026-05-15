@@ -1,6 +1,7 @@
 autowatch = 1; // auto-reload when you save the file
 
 var rows = [];
+var timestamps = [];
 var cursor = 0;
 const SELECTED_ROWS = [
     "Delta_TP9",
@@ -22,13 +23,13 @@ var min_val = 0.0;
 var max_val = 0.0;
 
 function parsetimestamp(s) {
+    post("Parsing timestamp: " + s + "\n");
     return new Date(s.replace(" ", "T")).getTime();
 }
 
 function update_current_time() {
     var ms = current_beats * (60000 / bpm);
     current_time_ms = ms;
-    post("Current time (ms): " + current_time_ms + "\n");
 }
 
 function msg_float(v) {
@@ -91,6 +92,9 @@ function readrow(line) {
         return null;
     }
     var cols = line.split(",");
+    var timestamp = parsetimestamp(cols[0]); // assuming timestamp is in the first column
+    timestamps.push(timestamp);
+
     for (var c = 0; c < cols.length; c++) { cols[c] = parseFloat(cols[c]); }
     var selected_cols = [];
     for (var s = 0; s < selected_indices.length; s++) {
