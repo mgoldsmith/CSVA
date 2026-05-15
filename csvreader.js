@@ -72,9 +72,6 @@ function bang() {
         var val = rows[i][c] + (rows[j][c] - rows[i][c]) * frac;
         var normalized = range > 0 ? (val - min_val) / range : 0;
         outlet(c, normalized);
-        if (c == 0) {
-            post("Time: " + t + " ms, Row: " + i + ", Val: " + val.toFixed(4) + ", Normalized: " + normalized.toFixed(4) + "\n");
-        }
     }
 }
 
