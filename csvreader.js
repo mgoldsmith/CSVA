@@ -23,7 +23,6 @@ var min_val = 0.0;
 var max_val = 0.0;
 
 function parsetimestamp(s) {
-    post("Parsing timestamp: " + s + "\n");
     return new Date(s.replace(" ", "T")).getTime();
 }
 
