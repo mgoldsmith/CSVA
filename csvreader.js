@@ -1,8 +1,8 @@
 autowatch = 1; // auto-reload when you save the file
 
 var rows = [];
-var timestamps = [];
-var cursor = 0;
+var timestamps = []; // ms offset from first row
+var t0 = 0; // first row's raw timestamp, used to zero-base the rest
 const SELECTED_ROWS = [
     "Delta_TP9",
     "Theta_TP9",
@@ -44,15 +44,38 @@ function msg_float(v) {
     update_current_time();
 }
 
+function findrow(t) {
+    // binary search for i where timestamps[i] <= t < timestamps[i+1]
+    var lo = 0, hi = timestamps.length - 2;
+    while (lo < hi) {
+        var mid = (lo + hi + 1) >> 1;
+        if (timestamps[mid] <= t) lo = mid;
+        else hi = mid - 1;
+    }
+    return lo;
+}
+
 function bang() {
     if (rows.length === 0 || range_initialized == false) return;
-    
-    var row = rows[cursor % rows.length]; // loop
-    for (var i = 0; i < NUM_COLS; i++) {
-        var normalized_wave_val = (row[i] - min_val) / (max_val - min_val);
-        outlet(i, normalized_wave_val);
+
+    var total_duration = timestamps[timestamps.length - 1];
+    if (total_duration <= 0) return;
+
+    var t = current_time_ms % total_duration;
+    var i = findrow(t);
+    var j = i + 1 < rows.length ? i + 1 : i;
+    var span = timestamps[j] - timestamps[i];
+    var frac = span > 0 ? (t - timestamps[i]) / span : 0;
+    var range = max_val - min_val;
+
+    for (var c = 0; c < NUM_COLS; c++) {
+        var val = rows[i][c] + (rows[j][c] - rows[i][c]) * frac;
+        var normalized = range > 0 ? (val - min_val) / range : 0;
+        outlet(c, normalized);
+        if (c == 0) {
+            post("Time: " + t + " ms, Row: " + i + ", Val: " + val.toFixed(4) + ", Normalized: " + normalized.toFixed(4) + "\n");
+        }
     }
-    cursor++;
 }
 
 function parseheader(header) {
@@ -93,7 +116,8 @@ function readrow(line) {
     }
     var cols = line.split(",");
     var timestamp = parsetimestamp(cols[0]); // assuming timestamp is in the first column
-    timestamps.push(timestamp);
+    if (timestamps.length === 0) t0 = timestamp;
+    timestamps.push(timestamp - t0);
 
     for (var c = 0; c < cols.length; c++) { cols[c] = parseFloat(cols[c]); }
     var selected_cols = [];
@@ -108,7 +132,7 @@ function readrow(line) {
 function loadfile(path) {
     rows = [];
     timestamps = [];
-    cursor = 0;
+    t0 = 0;
     range_initialized = false;
     selected_indices = [];
     var f = new File(path, "read");
