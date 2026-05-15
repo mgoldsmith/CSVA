@@ -107,6 +107,7 @@ function readrow(line) {
 
 function loadfile(path) {
     rows = [];
+    timestamps = [];
     cursor = 0;
     range_initialized = false;
     selected_indices = [];
