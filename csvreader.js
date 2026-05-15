@@ -12,10 +12,36 @@ const SELECTED_ROWS = [
 var selected_indices = [];
 var NUM_COLS = 5;
 outlets = NUM_COLS;
+inlets = 3;
+var current_beats = 0;
+var bpm = 120; // default until patcher sends it
+var current_time_ms = 0;
 
 var range_initialized = false;
 var min_val = 0.0;
 var max_val = 0.0;
+
+function parsetimestamp(s) {
+    return new Date(s.replace(" ", "T")).getTime();
+}
+
+function update_current_time() {
+    var ms = current_beats * (60000 / bpm);
+    current_time_ms = ms;
+    post("Current time (ms): " + current_time_ms + "\n");
+}
+
+function msg_float(v) {
+    // inlet 1: absolute sample count from plugsync~ outlet 8
+    if (inlet == 1) {
+        current_beats = v;  // plugsync~ outlet 7 via snapshot~
+    }
+    // inlet 2: bpm from patcher
+    else if (inlet == 2) {
+        bpm = v;
+    }
+    update_current_time();
+}
 
 function bang() {
     if (rows.length === 0 || range_initialized == false) return;
